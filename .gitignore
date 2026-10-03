@@ -8,6 +8,7 @@ data/raw/*
 data/processed/*
 
 models/*
+!models/spending_forecast_model.joblib
 mlruns/
 
 .pytest_cache/
