@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Edit Expense | SmartSpend AI</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+    <div class="main-content">
+
+        <div class="topbar">
+
+            <div>
+                <h1>Edit Expense</h1>
+                <p>Update your expense details</p>
+            </div>
+
+            <a href="/expenses/page" class="nav-item">
+                ← Back to Expenses
+            </a>
+
+        </div>
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <div>
+                    <h2>Edit Expense</h2>
+                    <p>Modify the details below</p>
+                </div>
+
+            </div>
+
+            <form
+                method="POST"
+                action="/expenses/edit/{{ expense.id }}"
+            >
+
+                <div>
+                    <label>Amount</label>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        value="{{ expense.amount }}"
+                        step="0.01"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label>Category</label>
+
+                    <input
+                        type="text"
+                        name="category"
+                        value="{{ expense.category }}"
+                        required
+                    >
+                </div>
+
+                <div>
+                    <label>Description</label>
+
+                    <input
+                        type="text"
+                        name="description"
+                        value="{{ expense.description or '' }}"
+                    >
+                </div>
+
+                <button type="submit">
+                    Update Expense
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

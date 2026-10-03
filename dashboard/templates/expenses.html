@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Expenses | SmartSpend AI</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+    <div class="main-content">
+
+        <!-- Topbar -->
+        <div class="topbar">
+
+            <div>
+                <h1>Expenses</h1>
+                <p>Manage your personal expenses</p>
+            </div>
+
+            <a href="/dashboard" class="nav-item">
+                ← Dashboard
+            </a>
+
+        </div>
+
+
+        <!-- Add Expense -->
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <div>
+                    <h2>Add Expense</h2>
+                    <p>Record a new expense</p>
+                </div>
+
+            </div>
+
+
+            <form method="POST" action="/expenses/add">
+
+                <div>
+                    <label>Amount</label>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        placeholder="Enter amount"
+                        step="0.01"
+                        required
+                    >
+                </div>
+
+
+                <div>
+                    <label>Category</label>
+
+                    <input
+                        type="text"
+                        name="category"
+                        placeholder="Food, Shopping, Transport..."
+                        required
+                    >
+                </div>
+
+
+                <div>
+                    <label>Description</label>
+
+                    <input
+                        type="text"
+                        name="description"
+                        placeholder="Enter description"
+                    >
+                </div>
+
+
+                <button type="submit">
+                    Add Expense
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <!-- Recent Expenses -->
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <div>
+                    <h2>Recent Expenses</h2>
+                    <p>Your recorded expenses</p>
+                </div>
+
+            </div>
+
+
+            <div class="expense-list">
+
+                {% for expense in expenses %}
+
+                <div class="expense-row">
+
+                    <div>
+
+                        <strong>
+                            {{ expense.category }}
+                        </strong>
+
+                        <small>
+                            {{ expense.description or "No description" }}
+                            &middot;
+                            {{ expense.created_at }}
+                        </small>
+
+                    </div>
+
+
+                    <div class="expense-actions">
+
+                        <strong>
+                            &#8377;{{ "{:,.2f}".format(expense.amount) }}
+                        </strong>
+
+
+                        <a
+                            href="/expenses/edit/{{ expense.id }}"
+                            class="edit-btn"
+                        >
+                            Edit
+                        </a>
+
+
+                        <form
+                            method="POST"
+                            action="/expenses/delete/{{ expense.id }}"
+                        >
+
+                            <button
+                                type="submit"
+                                class="delete-btn"
+                            >
+                                Delete
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+
+                {% else %}
+
+                <p>No expenses found.</p>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,18 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.ipynb_checkpoints/
+
+data/raw/*
+data/processed/*
+
+models/*
+mlruns/
+
+.pytest_cache/
+.vscode/
+.idea/
+
+# Local SQLite database
+*.db

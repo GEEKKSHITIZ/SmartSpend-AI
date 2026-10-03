@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Budget | SmartSpend AI</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                S
+            </div>
+
+            <div>
+
+                <h2>
+                    SmartSpend
+                </h2>
+
+                <span>
+                    AI Finance
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="navigation">
+
+            <a
+                href="/dashboard"
+                class="nav-item"
+            >
+
+                <span>
+                    &#8962;
+                </span>
+
+                Dashboard
+
+            </a>
+
+
+            <a
+                href="/expenses/page"
+                class="nav-item"
+            >
+
+                <span>
+                    &#8377;
+                </span>
+
+                Expenses
+
+            </a>
+
+
+            <a
+                href="/analytics/page"
+                class="nav-item"
+            >
+
+                <span>
+                    &#9719;
+                </span>
+
+                Analytics
+
+            </a>
+
+
+            <a
+                href="/budgets/page"
+                class="nav-item"
+            >
+
+                <span>
+                    &#9635;
+                </span>
+
+                Budget
+
+            </a>
+
+
+            <a
+                href="/ai/copilot"
+                class="nav-item"
+            >
+
+                <span>
+                    &#10022;
+                </span>
+
+                AI Copilot
+
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-footer">
+
+            <span>
+                SmartSpend AI
+            </span>
+
+            <small>
+                Personal Finance Intelligence
+            </small>
+
+        </div>
+
+    </aside>
+
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+
+    <main class="main-content">
+
+
+        <!-- =========================
+             HEADER
+        ========================== -->
+
+        <header class="topbar">
+
+            <div>
+
+                <p class="eyebrow">
+                    PERSONAL FINANCE
+                </p>
+
+                <h1>
+                    Budget
+                </h1>
+
+                <p class="subtitle">
+                    Set and manage your monthly spending budget.
+                </p>
+
+            </div>
+
+
+            <button class="profile-button">
+                KG
+            </button>
+
+        </header>
+
+
+
+        <!-- =========================
+             BUDGET KPI CARDS
+        ========================== -->
+
+        <section class="kpi-grid">
+
+
+            <!-- MONTHLY BUDGET -->
+
+            <div class="kpi-card">
+
+                <div class="kpi-header">
+
+                    <span>
+                        Monthly Budget
+                    </span>
+
+                    <div class="kpi-icon">
+                        &#8377;
+                    </div>
+
+                </div>
+
+                <h2>
+                    &#8377;{{ "{:,.0f}".format(budget_amount) }}
+                </h2>
+
+                <p class="kpi-description">
+                    Your current monthly budget
+                </p>
+
+            </div>
+
+
+
+            <!-- TOTAL SPENT -->
+
+            <div class="kpi-card">
+
+                <div class="kpi-header">
+
+                    <span>
+                        Total Spent
+                    </span>
+
+                    <div class="kpi-icon">
+                        &#8377;
+                    </div>
+
+                </div>
+
+                <h2>
+                    &#8377;{{ "{:,.0f}".format(total_spent) }}
+                </h2>
+
+                <p class="kpi-description">
+                    Spending this month
+                </p>
+
+            </div>
+
+
+
+            <!-- REMAINING -->
+
+            <div class="kpi-card">
+
+                <div class="kpi-header">
+
+                    <span>
+                        Remaining
+                    </span>
+
+                    <div class="kpi-icon">
+                        &#8599;
+                    </div>
+
+                </div>
+
+                <h2>
+                    &#8377;{{ "{:,.0f}".format(remaining) }}
+                </h2>
+
+                <p class="kpi-description">
+                    Available for the rest of the month
+                </p>
+
+            </div>
+
+
+
+            <!-- BUDGET USED -->
+
+            <div class="kpi-card">
+
+                <div class="kpi-header">
+
+                    <span>
+                        Budget Used
+                    </span>
+
+                    <div class="kpi-icon">
+                        %
+                    </div>
+
+                </div>
+
+                <h2>
+                    {{ budget_used_percentage }}%
+                </h2>
+
+                <p class="kpi-description">
+                    Of your monthly budget
+                </p>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =========================
+             BUDGET MANAGEMENT
+        ========================== -->
+
+        <section class="analytics-grid">
+
+
+            <!-- SET BUDGET -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+                            Set Monthly Budget
+                        </h2>
+
+                        <p>
+                            Define how much you want to spend each month.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+
+                <form
+                    id="budgetForm"
+                    class="budget-form"
+                >
+
+                    <label for="month">
+                        Month
+                    </label>
+
+                    <input
+                        type="month"
+                        id="month"
+                        name="month"
+                        value="{{ current_month }}"
+                        required
+                    >
+
+
+
+                    <label for="budget">
+                        Monthly Budget
+                    </label>
+
+
+                    <div class="budget-input-group">
+
+                        <span>
+                            &#8377;
+                        </span>
+
+                        <input
+                            type="number"
+                            id="budget"
+                            name="budget"
+                            min="1"
+                            step="any"
+                            placeholder="Enter monthly budget"
+                            required
+                        >
+
+                    </div>
+
+
+
+                    <button
+                        type="submit"
+                        class="budget-submit-button"
+                    >
+                        Set Budget
+                    </button>
+
+
+                    <p id="budgetMessage"></p>
+
+                </form>
+
+            </div>
+
+
+
+            <!-- BUDGET STATUS -->
+
+            <div class="panel">
+
+                <div class="panel-header">
+
+                    <div>
+
+                        <h2>
+                            Budget Status
+                        </h2>
+
+                        <p>
+                            Your current spending progress.
+                        </p>
+
+                    </div>
+
+
+                    <span class="status-badge">
+                        {{ status }}
+                    </span>
+
+                </div>
+
+
+
+                <div class="budget-amount">
+
+                    <strong>
+                        &#8377;{{ "{:,.0f}".format(total_spent) }}
+                    </strong>
+
+                    <span>
+                        of &#8377;{{ "{:,.0f}".format(budget_amount) }}
+                    </span>
+
+                </div>
+
+
+
+                <div class="progress-container">
+
+                    <div class="progress-bar">
+
+                        <div
+                            class="progress-fill"
+                            data-width="{{ budget_used_percentage }}"
+                        ></div>
+
+                    </div>
+
+                    <span>
+                        {{ budget_used_percentage }}%
+                    </span>
+
+                </div>
+
+
+
+                <div class="budget-footer">
+
+                    <span>
+                        Remaining
+                    </span>
+
+                    <strong>
+                        &#8377;{{ "{:,.0f}".format(remaining) }}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+        </section>
+
+
+
+        <!-- =========================
+             BUDGET OVERVIEW
+        ========================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Budget Overview
+                    </h2>
+
+                    <p>
+                        Keep track of your spending and stay within your limits.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="category-list">
+
+
+                <!-- SPENDING PROGRESS -->
+
+                <div class="category-row">
+
+                    <div class="category-info">
+
+                        <span class="category-dot"></span>
+
+                        <div>
+
+                            <strong>
+                                Spending Progress
+                            </strong>
+
+                            <small>
+                                You have used {{ budget_used_percentage }}% of your budget.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        {{ budget_used_percentage }}%
+                    </strong>
+
+                </div>
+
+
+
+                <!-- REMAINING BUDGET -->
+
+                <div class="category-row">
+
+                    <div class="category-info">
+
+                        <span class="category-dot"></span>
+
+                        <div>
+
+                            <strong>
+                                Remaining Budget
+                            </strong>
+
+                            <small>
+                                Amount available for the rest of the month.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        &#8377;{{ "{:,.0f}".format(remaining) }}
+                    </strong>
+
+                </div>
+
+
+
+                <!-- BUDGET STATUS -->
+
+                <div class="category-row">
+
+                    <div class="category-info">
+
+                        <span class="category-dot"></span>
+
+                        <div>
+
+                            <strong>
+                                Budget Status
+                            </strong>
+
+                            <small>
+                                Current spending status for this month.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        {{ status }}
+                    </strong>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+                <!-- =========================
+             BUDGET HISTORY
+        ========================== -->
+
+        <section class="panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Budget History
+                    </h2>
+
+                    <p>
+                        View all your saved monthly budgets.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="category-list">
+
+                {% if budget_history %}
+
+                    {% for budget in budget_history %}
+
+                        <div class="category-row">
+
+                            <div class="category-info">
+
+                                <span class="category-dot"></span>
+
+                                <div>
+
+                                    <strong>
+                                        {{ budget["month"] }}
+                                    </strong>
+
+                                    <small>
+                                        Monthly budget
+                                    </small>
+
+                                </div>
+
+                            </div>
+
+
+                            <strong>
+                                &#8377;{{ "{:,.0f}".format(budget["amount"]) }}
+                            </strong>
+
+                        </div>
+
+                    {% endfor %}
+
+                {% else %}
+
+                    <div class="category-row">
+
+                        <div class="category-info">
+
+                            <span class="category-dot"></span>
+
+                            <div>
+
+                                <strong>
+                                    No budgets found
+                                </strong>
+
+                                <small>
+                                    Set your first monthly budget above.
+                                </small>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </section>
+
+
+
+        <!-- =========================
+             FOOTER
+        ========================== -->
+
+        <footer class="dashboard-footer">
+
+            <span>
+                SmartSpend AI
+            </span>
+
+            <span>
+                Financial Intelligence Dashboard
+            </span>
+
+        </footer>
+
+
+    </main>
+
+
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+
+    <script>
+
+
+        // =========================
+        // ACTIVE NAVIGATION
+        // =========================
+
+        const currentPath =
+            window.location.pathname;
+
+
+        document
+            .querySelectorAll(".nav-item")
+            .forEach(function (item) {
+
+                const linkPath =
+                    new URL(
+                        item.href,
+                        window.location.origin
+                    ).pathname;
+
+
+                if (linkPath === currentPath) {
+
+                    item.classList.add("active");
+
+                }
+
+            });
+
+
+
+        // =========================
+        // BUDGET FORM
+        // =========================
+
+        const budgetForm =
+            document.getElementById("budgetForm");
+
+
+        budgetForm.addEventListener(
+            "submit",
+            async function (event) {
+
+                event.preventDefault();
+
+
+                const month =
+                    document.getElementById("month").value;
+
+
+                const budget =
+                    document.getElementById("budget").value;
+
+
+                const message =
+                    document.getElementById("budgetMessage");
+
+
+                try {
+
+                    const response =
+                        await fetch(
+                            "/budgets",
+                            {
+
+                                method: "POST",
+
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+
+                                body:
+                                    JSON.stringify(
+                                        {
+                                            month: month,
+                                            amount: budget
+                                        }
+                                    )
+
+                            }
+                        );
+
+
+                    const data =
+                        await response.json();
+
+
+                    if (response.ok) {
+
+                        message.textContent =
+                            data.message ||
+                            "Budget saved successfully!";
+
+                        message.style.color =
+                            "green";
+
+                        /*
+                         * Reload the page after saving
+                         * so the latest budget appears
+                         * immediately in the dashboard.
+                         */
+
+                        setTimeout(
+                            function () {
+
+                                window.location.href =
+                                "/budgets/page?month=" + month;
+
+                            },
+                            500
+                        );
+
+                    } else {
+
+                        message.textContent =
+                            data.error ||
+                            "Something went wrong.";
+
+                        message.style.color =
+                            "red";
+
+                    }
+
+
+                } catch (error) {
+
+                    message.textContent =
+                        "Unable to connect to server.";
+
+                    message.style.color =
+                        "red";
+
+                }
+
+            }
+        );
+
+
+
+        // =========================
+        // PROGRESS BAR
+        // =========================
+
+        document
+            .querySelectorAll(".progress-fill")
+            .forEach(function (bar) {
+
+                let width =
+                    parseFloat(
+                        bar.dataset.width
+                    );
+
+
+                /*
+                 * Prevent progress bar from
+                 * visually exceeding 100%.
+                 */
+
+                if (width < 0) {
+                    width = 0;
+                }
+
+
+                if (width > 100) {
+                    width = 100;
+                }
+
+
+                bar.style.width =
+                    width + "%";
+
+            });
+
+
+    </script>
+
+
+</body>
+
+</html>

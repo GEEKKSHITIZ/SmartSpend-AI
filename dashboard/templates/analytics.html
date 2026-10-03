@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Analytics - SmartSpend AI</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+
+<style>
+
+    .analytics-page {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .analytics-section {
+        margin-top: 20px;
+    }
+
+
+    /* =========================
+       CATEGORY SPENDING
+    ========================== */
+
+    .category-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .category-row {
+        display: grid;
+        grid-template-columns: 1fr 2fr auto;
+        align-items: center;
+        gap: 18px;
+        padding: 12px;
+        border-radius: 10px;
+
+        transition:
+            background 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .category-row:hover {
+        background: #f8f9ff;
+        transform: translateX(3px);
+    }
+
+    .category-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .category-info strong {
+        color: var(--text);
+        font-size: 14px;
+    }
+
+    .category-info span {
+        color: var(--muted);
+        font-size: 12px;
+        white-space: nowrap;
+    }
+
+    .category-progress {
+        width: 100%;
+        height: 8px;
+        background: #eef0f5;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .category-progress-fill {
+        width: 0%;
+        height: 100%;
+
+        background: linear-gradient(
+            90deg,
+            var(--primary),
+            #818cf8
+        );
+
+        border-radius: 999px;
+        min-width: 3px;
+
+        transition:
+            width 0.4s ease;
+    }
+
+    .category-amount {
+        min-width: 100px;
+        text-align: right;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+    }
+
+
+    /* =========================
+       MONTHLY ANALYTICS
+    ========================== */
+
+    .monthly-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .monthly-row {
+        display: grid;
+
+        grid-template-columns:
+            100px
+            1fr
+            auto;
+
+        align-items: center;
+        gap: 16px;
+    }
+
+    .monthly-month {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+    }
+
+    .monthly-progress {
+        width: 100%;
+        height: 8px;
+        background: #eef0f5;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .monthly-progress-fill {
+        width: 0%;
+        height: 100%;
+
+        background: linear-gradient(
+            90deg,
+            #6366f1,
+            #818cf8
+        );
+
+        border-radius: 999px;
+
+        transition:
+            width 0.5s ease;
+    }
+
+    .monthly-amount {
+        min-width: 100px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+    }
+
+
+    /* =========================
+       SPENDING TRENDS
+    ========================== */
+
+    .trend-list {
+        display: grid;
+
+        grid-template-columns:
+            repeat(
+                auto-fit,
+                minmax(180px, 1fr)
+            );
+
+        gap: 14px;
+        margin-top: 18px;
+    }
+
+    .trend-card {
+        padding: 16px;
+
+        border: 1px solid #eef0f5;
+        border-radius: 12px;
+        background: #ffffff;
+
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+    .trend-card:hover {
+        transform: translateY(-2px);
+
+        border-color: #dcdcff;
+
+        box-shadow:
+            0 8px 20px rgba(
+                15,
+                23,
+                42,
+                0.06
+            );
+    }
+
+    .trend-month {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+    }
+
+    .trend-amount {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 6px;
+    }
+
+    .trend-change {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+
+    /* =========================
+       EMPTY STATE
+    ========================== */
+
+    .analytics-empty {
+        padding: 24px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+
+    /* =========================
+       MOBILE
+    ========================== */
+
+    @media (max-width: 700px) {
+
+        .analytics-page {
+            width: 100%;
+        }
+
+        .category-row {
+            grid-template-columns:
+                1fr
+                auto;
+
+            gap: 10px;
+        }
+
+        .category-info {
+            justify-content: flex-start;
+            gap: 12px;
+        }
+
+        .category-progress {
+            grid-column: 1 / -1;
+            grid-row: 2;
+        }
+
+        .category-amount {
+            min-width: auto;
+            text-align: right;
+        }
+
+        .monthly-row {
+            grid-template-columns:
+                80px
+                1fr
+                auto;
+
+            gap: 10px;
+        }
+
+        .monthly-amount {
+            min-width: auto;
+        }
+
+        .trend-list {
+            grid-template-columns: 1fr;
+        }
+
+    }
+
+</style>
+
+</head>
+
+<body>
+
+<main class="main-content">
+
+    <div class="analytics-page">
+
+
+        <!-- =========================
+             TOPBAR
+        ========================== -->
+
+        <div class="topbar">
+
+            <div>
+
+                <p class="eyebrow">
+                    PERSONAL FINANCE
+                </p>
+
+                <h1>
+                    Spending Analytics
+                </h1>
+
+                <p class="subtitle">
+                    Understand your spending patterns and financial activity.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             KPI CARDS
+        ========================== -->
+
+        <section class="kpi-grid">
+
+
+            <div class="kpi-card">
+
+                <span>
+                    Total Spending
+                </span>
+
+                <h2>
+                    &#8377;{{ "{:,.0f}".format(analytics.total_spending) }}
+                </h2>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <span>
+                    Total Expenses
+                </span>
+
+                <h2>
+                    {{ analytics.total_expenses }}
+                </h2>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <span>
+                    Average Expense
+                </span>
+
+                <h2>
+                    &#8377;{{ "{:,.0f}".format(analytics.average_expense) }}
+                </h2>
+
+            </div>
+
+
+            <div class="kpi-card">
+
+                <span>
+                    Highest Expense
+                </span>
+
+                <h2>
+                    &#8377;{{ "{:,.0f}".format(analytics.highest_expense) }}
+                </h2>
+
+            </div>
+
+
+        </section>
+
+
+        <!-- =========================
+             CATEGORY SPENDING
+        ========================== -->
+
+        <section class="panel analytics-section">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        BREAKDOWN
+                    </p>
+
+                    <h2>
+                        Category Spending
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            {% if categories %}
+
+            <div class="category-list">
+
+
+                {% for category in categories %}
+
+                <div class="category-row">
+
+
+                    <div class="category-info">
+
+                        <strong>
+                            {{ category.category }}
+                        </strong>
+
+                        <span>
+                            {{ category.percentage }}%
+                        </span>
+
+                    </div>
+
+
+                    <div class="category-progress">
+
+                        <div
+                            class="category-progress-fill"
+                            data-percentage="{{ category.percentage }}"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="category-amount">
+
+                        &#8377;{{ "{:,.0f}".format(category.total_spending) }}
+
+                    </div>
+
+
+                </div>
+
+                {% endfor %}
+
+
+            </div>
+
+            {% else %}
+
+            <div class="analytics-empty">
+
+                No category spending data available.
+
+            </div>
+
+            {% endif %}
+
+
+        </section>
+
+
+        <!-- =========================
+             MONTHLY SPENDING
+        ========================== -->
+
+        <section class="panel analytics-section">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        MONTHLY
+                    </p>
+
+                    <h2>
+                        Monthly Spending
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            {% if monthly %}
+
+            <div class="monthly-list">
+
+
+                {% for item in monthly %}
+
+                <div
+                    class="monthly-row"
+                    data-spending="{{ item.total_spending }}"
+                >
+
+
+                    <div class="monthly-month">
+
+                        {{ item.month }}
+
+                    </div>
+
+
+                    <div class="monthly-progress">
+
+                        <div
+                            class="monthly-progress-fill"
+                        ></div>
+
+                    </div>
+
+
+                    <div class="monthly-amount">
+
+                        &#8377;{{ "{:,.0f}".format(item.total_spending) }}
+
+                    </div>
+
+
+                </div>
+
+                {% endfor %}
+
+
+            </div>
+
+            {% else %}
+
+            <div class="analytics-empty">
+
+                No monthly spending data available.
+
+            </div>
+
+            {% endif %}
+
+
+        </section>
+
+
+        <!-- =========================
+             SPENDING TRENDS
+        ========================== -->
+
+        <section class="panel analytics-section">
+
+
+            <div class="panel-header">
+
+                <div>
+
+                    <p class="eyebrow">
+                        TRENDS
+                    </p>
+
+                    <h2>
+                        Spending Trends
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            {% if trends %}
+
+            <div class="trend-list">
+
+
+                {% for trend in trends %}
+
+                <div class="trend-card">
+
+
+                    <div class="trend-month">
+
+                        {{ trend.month }}
+
+                    </div>
+
+
+                    <div class="trend-amount">
+
+                        &#8377;{{ "{:,.0f}".format(trend.total_spending) }}
+
+                    </div>
+
+
+                    <div class="trend-change">
+
+
+                        {% if trend.change_percentage > 0 %}
+
+                            ↑
+                            {{ trend.change_percentage }}%
+                            from previous month
+
+
+                        {% elif trend.change_percentage < 0 %}
+
+                            ↓
+                            {{ trend.change_percentage | abs }}%
+                            from previous month
+
+
+                        {% else %}
+
+                            No change from previous month
+
+                        {% endif %}
+
+
+                    </div>
+
+
+                </div>
+
+                {% endfor %}
+
+
+            </div>
+
+            {% else %}
+
+            <div class="analytics-empty">
+
+                No spending trend data available.
+
+            </div>
+
+            {% endif %}
+
+
+        </section>
+
+
+    </div>
+
+</main>
+
+
+<!-- =========================
+     ANALYTICS BAR CALCULATIONS
+========================== -->
+
+<script>
+
+    /* =========================
+       CATEGORY BAR CALCULATION
+    ========================== */
+
+    const categoryBars =
+        document.querySelectorAll(
+            ".category-progress-fill"
+        );
+
+
+    categoryBars.forEach(
+        function (bar) {
+
+            const percentage =
+                Number(
+                    bar.dataset.percentage
+                );
+
+
+            if (
+                Number.isFinite(
+                    percentage
+                )
+            ) {
+
+                const safePercentage =
+                    Math.max(
+                        0,
+                        Math.min(
+                            100,
+                            percentage
+                        )
+                    );
+
+
+                bar.style.width =
+                    safePercentage + "%";
+
+            }
+
+        }
+    );
+
+
+    /* =========================
+       MONTHLY BAR CALCULATION
+    ========================== */
+
+    const monthlyRows =
+        document.querySelectorAll(
+            ".monthly-row"
+        );
+
+
+    let maxSpending = 0;
+
+
+    monthlyRows.forEach(
+        function (row) {
+
+            const spending =
+                Number(
+                    row.dataset.spending
+                );
+
+
+            if (
+                Number.isFinite(
+                    spending
+                )
+                &&
+                spending > maxSpending
+            ) {
+
+                maxSpending =
+                    spending;
+
+            }
+
+        }
+    );
+
+
+    monthlyRows.forEach(
+        function (row) {
+
+            const spending =
+                Number(
+                    row.dataset.spending
+                );
+
+
+            const bar =
+                row.querySelector(
+                    ".monthly-progress-fill"
+                );
+
+
+            if (
+                bar
+                &&
+                maxSpending > 0
+                &&
+                Number.isFinite(
+                    spending
+                )
+            ) {
+
+                const percentage =
+                    (
+                        spending
+                        /
+                        maxSpending
+                    ) * 100;
+
+
+                bar.style.width =
+                    percentage + "%";
+
+            }
+
+        }
+    );
+
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+```
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>SmartSpend AI</title>
+
+<link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='style.css') }}"
+>
+```
+
+</head>
+
+<body>
+
+```
+<!-- =========================
+     SIDEBAR
+========================== -->
+
+<aside class="sidebar">
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            S
+        </div>
+
+        <div>
+
+            <h2>
+                SmartSpend
+            </h2>
+
+            <span>
+                AI Finance
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <nav class="navigation">
+
+        <a href="/dashboard" class="nav-item">
+
+            <span>
+                &#8962;
+            </span>
+
+            Dashboard
+
+        </a>
+
+
+        <a href="/expenses/page" class="nav-item">
+
+            <span>
+                &#8377;
+            </span>
+
+            Expenses
+
+        </a>
+
+
+        <a href="/analytics/page" class="nav-item">
+
+            <span>
+                &#9719;
+            </span>
+
+            Analytics
+
+        </a>
+
+
+        <a href="/budgets" class="nav-item">
+
+            <span>
+                &#9635;
+            </span>
+
+            Budget
+
+        </a>
+
+
+        <a href="/ai/copilot" class="nav-item">
+
+            <span>
+                &#10022;
+            </span>
+
+            AI Copilot
+
+        </a>
+
+    </nav>
+
+
+    <div class="sidebar-footer">
+
+        <span>
+            SmartSpend AI
+        </span>
+
+        <small>
+            Personal Finance Intelligence
+        </small>
+
+    </div>
+
+</aside>
+
+
+<!-- =========================
+     MAIN CONTENT
+========================== -->
+
+<main class="main-content">
+
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+
+    <header class="topbar">
+
+        <div>
+
+            <p class="eyebrow">
+                PERSONAL FINANCE
+            </p>
+
+            <h1>
+                Good morning 👋
+            </h1>
+
+            <p class="subtitle">
+                Here's your financial overview.
+            </p>
+
+        </div>
+
+
+        <button class="profile-button">
+            KG
+        </button>
+
+    </header>
+
+
+    <!-- =========================
+         KPI CARDS
+    ========================== -->
+
+    <section class="kpi-grid">
+
+
+        <!-- Total Spending -->
+
+        <div class="kpi-card">
+
+            <div class="kpi-header">
+
+                <span>
+                    Total Spending
+                </span>
+
+                <div class="kpi-icon">
+                    &#8377;
+                </div>
+
+            </div>
+
+            <h2>
+                &#8377;{{ "{:,.2f}".format(analytics.total_spending) }}
+            </h2>
+
+            <p class="kpi-description">
+                Across all recorded expenses
+            </p>
+
+        </div>
+
+
+        <!-- Total Expenses -->
+
+        <div class="kpi-card">
+
+            <div class="kpi-header">
+
+                <span>
+                    Total Expenses
+                </span>
+
+                <div class="kpi-icon">
+                    #
+                </div>
+
+            </div>
+
+            <h2>
+                {{ analytics.total_expenses }}
+            </h2>
+
+            <p class="kpi-description">
+                Transactions recorded
+            </p>
+
+        </div>
+
+
+        <!-- Average Expense -->
+
+        <div class="kpi-card">
+
+            <div class="kpi-header">
+
+                <span>
+                    Average Expense
+                </span>
+
+                <div class="kpi-icon">
+                    &#8599;
+                </div>
+
+            </div>
+
+            <h2>
+                &#8377;{{ "{:,.2f}".format(analytics.average_expense) }}
+            </h2>
+
+            <p class="kpi-description">
+                Average per transaction
+            </p>
+
+        </div>
+
+
+        <!-- Next Month Forecast -->
+
+        <div class="kpi-card forecast-card">
+
+            <div class="kpi-header">
+
+                <span>
+                    Next Month Forecast
+                </span>
+
+                <div class="kpi-icon">
+                    &#10022;
+                </div>
+
+            </div>
+
+            <h2>
+                &#8377;{{ "{:,.2f}".format(forecast.predicted_spending) }}
+            </h2>
+
+            <p class="kpi-description">
+                AI-powered prediction
+            </p>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         ANALYTICS SECTION
+    ========================== -->
+
+    <section class="analytics-grid">
+
+
+        <!-- =========================
+             MONTHLY SPENDING
+        ========================== -->
+
+        <div class="panel monthly-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Monthly Spending
+                    </h2>
+
+                    <p>
+                        Your spending trend over time
+                    </p>
+
+                </div>
+
+                <span class="panel-badge">
+                    2026
+                </span>
+
+            </div>
+
+
+            <div class="monthly-data-chart">
+
+                {% for item in monthly %}
+
+                <div class="month-column">
+
+                    <div class="month-value">
+                        &#8377;{{ "{:,.0f}".format(item.total_spending) }}
+                    </div>
+
+
+                    <div class="bar-wrapper">
+
+                        <div
+                            class="month-bar"
+                            style="--bar-height: {{ item.bar_height }}%;">
+                        </div>
+
+                    </div>
+
+
+                    <div class="month-label">
+                        {{ item.month[5:] }}
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             CATEGORY SPENDING
+        ========================== -->
+
+        <div class="panel category-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        Category Spending
+                    </h2>
+
+                    <p>
+                        Where your money goes
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="category-list">
+
+                {% for category in categories %}
+
+                <div class="category-row">
+
+                    <div class="category-info">
+
+                        <span class="category-dot"></span>
+
+                        <div>
+
+                            <strong>
+                                {{ category.category }}
+                            </strong>
+
+                            <small>
+
+                                {{ category.expense_count }}
+                                expenses
+
+                                &middot;
+
+                                {{ category.percentage }}%
+
+                            </small>
+
+                        </div>
+
+                    </div>
+
+
+                    <strong>
+                        &#8377;{{ "{:,.2f}".format(category.total_spending) }}
+                    </strong>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =========================
+         BOTTOM SECTION
+    ========================== -->
+
+    <section class="bottom-grid">
+
+
+        <!-- =========================
+             BUDGET
+        ========================== -->
+
+        <div class="panel budget-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h2>
+                        {{ budget.month }} Budget
+                    </h2>
+
+                    <p>
+                        Monthly budget tracking
+                    </p>
+
+                </div>
+
+                <span class="status-badge">
+                    {{ budget.status }}
+                </span>
+
+            </div>
+
+
+            <div class="budget-amount">
+
+                <strong>
+                    &#8377;{{ "{:,.0f}".format(budget.total_spending) }}
+                </strong>
+
+                <span>
+                    of &#8377;{{ "{:,.0f}".format(budget.budget) }}
+                </span>
+
+            </div>
+
+
+            <div class="progress-container">
+
+                <div class="progress-bar">
+
+                    <div
+                        class="progress-fill"
+                        data-width="{{ budget.budget_used_percentage }}">
+                    </div>
+
+                </div>
+
+                <span>
+                    {{ budget.budget_used_percentage }}%
+                </span>
+
+            </div>
+
+
+            <div class="budget-footer">
+
+                <span>
+                    Remaining
+                </span>
+
+                <strong>
+                    &#8377;{{ "{:,.0f}".format(budget.remaining_budget) }}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             SPENDING PATTERNS
+        ========================== -->
+
+        <section class="panel spending-patterns-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h3>
+                        Spending Patterns
+                    </h3>
+
+                    <p>
+                        AI-powered analysis of your spending behavior
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {% for pattern in spending_patterns %}
+
+
+                {% if pattern.type == "dominant_category" %}
+
+                <div class="pattern-card">
+
+                    <div class="pattern-title">
+                        🏷️ Dominant Category
+                    </div>
+
+                    <div class="pattern-main">
+                        {{ pattern.category }}
+                    </div>
+
+                    <div class="pattern-details">
+
+                        &#8377;{{ "{:,.2f}".format(pattern.amount) }}
+
+                        ·
+
+                        {{ pattern.percentage }}% of total spending
+
+                    </div>
+
+                </div>
+
+
+                {% elif pattern.type == "major_categories" %}
+
+                <div class="pattern-card">
+
+                    <div class="pattern-title">
+                        📊 Major Spending Categories
+                    </div>
+
+
+                    {% for category in pattern.categories %}
+
+                    <div class="category-pattern">
+
+                        <div class="category-pattern-header">
+
+                            <span>
+                                {{ category.category }}
+                            </span>
+
+                            <span>
+                                {{ category.percentage }}%
+                            </span>
+
+                        </div>
+
+
+                        <div class="pattern-bar">
+
+                            <div
+                                class="pattern-bar-fill"
+                                data-width="{{ category.percentage }}">
+                            </div>
+
+                        </div>
+
+
+                        <div class="pattern-amount">
+
+                            &#8377;{{ "{:,.2f}".format(category.amount) }}
+
+                        </div>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+
+                {% elif pattern.type == "monthly_change" %}
+
+                <div class="pattern-card">
+
+                    <div class="pattern-title">
+                        📅 Monthly Spending Pattern
+                    </div>
+
+                    <div class="pattern-main">
+
+                        {{ pattern.previous_month }}
+
+                        →
+
+                        {{ pattern.latest_month }}
+
+                    </div>
+
+
+                    <div class="pattern-details">
+
+                        {% if pattern.difference < 0 %}
+
+                            Spending decreased by
+
+                            &#8377;{{ "{:,.2f}".format(pattern.difference | abs) }}
+
+                            ({{ pattern.percentage_change | abs }}%)
+
+                        {% else %}
+
+                            Spending increased by
+
+                            &#8377;{{ "{:,.2f}".format(pattern.difference) }}
+
+                            ({{ pattern.percentage_change }}%)
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+            {% endfor %}
+
+        </section>
+
+
+        <!-- =========================
+             SMART FINANCIAL INSIGHTS
+        ========================== -->
+
+        <section class="panel financial-insights-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h3>
+                        Smart Financial Insights
+                    </h3>
+
+                    <p>
+                        AI-powered insights based on your spending behavior
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {% if insights %}
+
+                <div class="financial-insights-list">
+
+                    {% for insight in insights %}
+
+                        <div class="financial-insight-card">
+
+                            <div class="financial-insight-content">
+
+
+                                {% if insight.type == "dominant_category_insight" %}
+
+                                    <strong>
+                                        Top Spending Category
+                                    </strong>
+
+                                    <p>
+                                        {{ insight.message }}
+                                    </p>
+
+
+                                {% elif insight.type == "spending_reduction" %}
+
+                                    <strong>
+                                        Spending Reduction
+                                    </strong>
+
+                                    <p>
+                                        {{ insight.message }}
+                                    </p>
+
+
+                                {% elif insight.type == "spending_increase" %}
+
+                                    <strong>
+                                        Spending Increase
+                                    </strong>
+
+                                    <p>
+                                        {{ insight.message }}
+                                    </p>
+
+
+                                {% elif insight.type == "highest_spending_category" %}
+
+                                    <strong>
+                                        Highest Spending Category
+                                    </strong>
+
+                                    <p>
+
+                                        {{ insight.category }}
+
+                                        —
+
+                                        &#8377;{{ "{:,.2f}".format(insight.amount) }}
+
+                                    </p>
+
+
+                                {% elif insight.type == "overall_trend" %}
+
+                                    <strong>
+                                        Overall Spending Trend
+                                    </strong>
+
+                                    <p>
+
+                                        Spending changed by
+
+                                        &#8377;{{ "{:,.2f}".format(insight.difference) }}
+
+                                        from
+
+                                        {{ insight.start_month }}
+
+                                        to
+
+                                        {{ insight.end_month }}.
+
+                                    </p>
+
+
+                                {% elif insight.type == "forecast" %}
+
+                                    <strong>
+                                        Next Month Forecast
+                                    </strong>
+
+                                    <p>
+
+                                        Predicted spending:
+
+                                        &#8377;{{ "{:,.2f}".format(insight.predicted_spending) }}
+
+                                    </p>
+
+
+                                {% elif insight.type == "unusual_expenses" %}
+
+                                    <strong>
+                                        Expense Pattern
+                                    </strong>
+
+                                    <p>
+                                        {{ insight.message }}
+                                    </p>
+
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <p>
+                    No financial insights available yet.
+                </p>
+
+            {% endif %}
+
+        </section>
+
+
+        <!-- =========================
+             UNUSUAL EXPENSES
+        ========================== -->
+
+        <section class="panel unusual-expenses-panel">
+
+            <div class="panel-header">
+
+                <div>
+
+                    <h3>
+                        Unusual Expenses
+                    </h3>
+
+                    <p>
+                        Expenses that are significantly higher than your normal spending pattern
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            {% if unusual_expenses %}
+
+                {% for expense in unusual_expenses %}
+
+                <div class="unusual-expense-card">
+
+                    <div class="unusual-expense-info">
+
+                        <div class="unusual-expense-title">
+                            {{ expense.category }}
+                        </div>
+
+                        <div class="unusual-expense-description">
+                            {{ expense.description or "No description" }}
+                        </div>
+
+                    </div>
+
+
+                    <div class="unusual-expense-amount">
+
+                        &#8377;{{ "{:,.2f}".format(expense.amount) }}
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="no-unusual-expenses">
+
+                    <div class="no-unusual-icon">
+                        ✓
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            No unusual expenses detected
+                        </strong>
+
+                        <p>
+                            Your current expenses are within your normal spending pattern.
+                        </p>
+
+                    </div>
+
+                </div>
+
+            {% endif %}
+
+        </section>
+
+
+    </section>
+
+
+    <!-- =========================
+         AI COPILOT
+    ========================== -->
+
+    <section class="panel ai-panel">
+
+        <div class="ai-header">
+
+            <div class="ai-icon">
+                &#10022;
+            </div>
+
+            <div>
+
+                <h2>
+                    AI Financial Copilot
+                </h2>
+
+                <p>
+                    Ask questions about your finances
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="suggestion">
+            "Why did my spending increase?"
+        </div>
+
+
+        <div class="suggestion">
+            "What is my predicted spending next month?"
+        </div>
+
+
+        <!-- AI QUESTION FORM -->
+
+        <form
+            class="ai-input"
+            method="POST"
+            action="/ai/copilot"
+        >
+
+            <input
+                type="text"
+                name="question"
+                placeholder="Ask SmartSpend AI..."
+                required
+            >
+
+            <button type="submit">
+                Ask
+            </button>
+
+        </form>
+
+
+        <!-- AI RESPONSE -->
+
+        {% if ai_response %}
+
+        <div class="ai-response">
+
+            <strong>
+                SmartSpend AI
+            </strong>
+
+            <p>
+                {{ ai_response }}
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+
+    <!-- =========================
+         FOOTER
+    ========================== -->
+
+    <footer class="dashboard-footer">
+
+        <span>
+            SmartSpend AI
+        </span>
+
+        <span>
+            Financial Intelligence Dashboard
+        </span>
+
+    </footer>
+
+
+</main>
+
+
+<script>
+
+    document.querySelectorAll(".pattern-bar-fill").forEach(function(bar) {
+
+        bar.style.width = bar.dataset.width + "%";
+
+    });
+
+</script>
+<script>
+    const currentPath = window.location.pathname;
+
+    document.querySelectorAll(".nav-item").forEach(function (item) {
+
+        const linkPath = new URL(
+            item.href,
+            window.location.origin
+        ).pathname;
+
+        if (linkPath === currentPath) {
+            item.classList.add("active");
+        }
+
+    });
+</script>
+
+</body>
+
+</html>
