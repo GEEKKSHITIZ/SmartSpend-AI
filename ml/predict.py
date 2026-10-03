@@ -30,6 +30,10 @@ def predict_next_month():
         subset=["previous_month_spending"]
     ).reset_index(drop=True)
 
+    # No expense data available
+    if monthly.empty:
+        return 0.0
+
     monthly["time_index"] = range(len(monthly))
 
     next_month_index = len(monthly)
