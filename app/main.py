@@ -88,7 +88,6 @@ def dashboard():
     budget_response = get_budget_analysis()
 
     if isinstance(budget_response, tuple):
-
         budget_response = {
             "month": "Current Month",
             "budget": 0,
@@ -119,9 +118,7 @@ def dashboard():
 
     monthly = get_monthly_analytics()
 
-    monthly_data = monthly[
-        "monthly_analytics"
-    ]
+    monthly_data = monthly["monthly_analytics"]
 
     if monthly_data:
 
@@ -133,14 +130,11 @@ def dashboard():
         for item in monthly_data:
 
             if max_spending > 0:
-
                 item["bar_height"] = (
                     item["total_spending"]
                     / max_spending
                 ) * 100
-
             else:
-
                 item["bar_height"] = 0
 
     # -----------------------------------------------------
@@ -192,11 +186,7 @@ def dashboard():
 
 @app.route("/")
 def home():
-
-    return {
-        "project": "SmartSpend AI",
-        "status": "running"
-    }
+    return redirect("/dashboard")
 
 
 # =========================================================
@@ -263,7 +253,6 @@ def add_expense():
     data = request.get_json()
 
     if not data:
-
         return {
             "error": "Request body is required"
         }, 400
@@ -273,39 +262,32 @@ def add_expense():
     description = data.get("description")
 
     if amount is None:
-
         return {
             "error": "Amount is required"
         }, 400
 
     try:
-
         amount = float(amount)
 
     except (
         TypeError,
         ValueError
     ):
-
         return {
             "error": "Amount must be a number"
         }, 400
 
     if amount <= 0:
-
         return {
-            "error":
-                "Amount must be greater than 0"
+            "error": "Amount must be greater than 0"
         }, 400
 
     if (
         not category
         or not category.strip()
     ):
-
         return {
-            "error":
-                "Category is required"
+            "error": "Category is required"
         }, 400
 
     connection = get_db_connection()
@@ -330,8 +312,7 @@ def add_expense():
     connection.close()
 
     return {
-        "message":
-            "Expense added successfully",
+        "message": "Expense added successfully",
         "expense_id": expense_id
     }, 201
 
@@ -352,22 +333,27 @@ def get_analytics():
         """
         SELECT
             COUNT(*) AS total_expenses,
+
             COALESCE(
                 SUM(amount),
                 0
             ) AS total_spending,
+
             COALESCE(
                 AVG(amount),
                 0
             ) AS average_expense,
+
             COALESCE(
                 MAX(amount),
                 0
             ) AS highest_expense,
+
             COALESCE(
                 MIN(amount),
                 0
             ) AS lowest_expense
+
         FROM expenses
         """
     ).fetchone()
@@ -392,6 +378,10 @@ def get_analytics():
     }
 
 
+# =========================================================
+# ANALYTICS PAGE
+# =========================================================
+
 @app.route(
     "/analytics/page",
     methods=["GET"]
@@ -410,13 +400,20 @@ def analytics_page():
         ["monthly_analytics"]
     )
 
-    trends = get_spending_trends()["trends"]
+    trends = (
+        get_spending_trends()
+        ["trends"]
+    )
 
     return render_template(
         "analytics.html",
+
         analytics=analytics,
+
         categories=categories,
+
         monthly=monthly,
+
         trends=trends
     )
 
@@ -437,8 +434,11 @@ def get_category_analytics():
         """
         SELECT
             category,
+
             COUNT(*) AS expense_count,
+
             SUM(amount) AS total_spending,
+
             AVG(amount) AS average_expense,
 
             ROUND(
@@ -489,6 +489,7 @@ def get_monthly_analytics():
     results = connection.execute(
         """
         SELECT
+
             strftime(
                 '%Y-%m',
                 created_at
@@ -545,6 +546,7 @@ def get_expenses():
 
     return {
         "count": len(expenses),
+
         "expenses": [
             dict(expense)
             for expense in expenses
@@ -567,6 +569,7 @@ def get_spending_trends():
     results = connection.execute(
         """
         SELECT
+
             strftime(
                 '%Y-%m',
                 created_at
@@ -622,8 +625,7 @@ def get_spending_trends():
                 ) * 100
 
         trends.append({
-            "month":
-                row["month"],
+            "month": row["month"],
 
             "total_spending":
                 current_spending,
@@ -641,25 +643,31 @@ def get_spending_trends():
 
 
 # =========================================================
-# BUDGET
+# BUDGET PAGE
 # =========================================================
 
-@app.route("/budgets/page", methods=["GET"])
+@app.route(
+    "/budgets/page",
+    methods=["GET"]
+)
 def budget_page():
 
-    selected_month = request.args.get("month")
+    selected_month = request.args.get(
+        "month"
+    )
 
     if not selected_month:
 
-        selected_month = datetime.now().strftime(
-            "%Y-%m"
+        selected_month = (
+            datetime.now()
+            .strftime("%Y-%m")
         )
 
     connection = get_db_connection()
 
-    # =========================
+    # -----------------------------------------------------
     # GET BUDGET
-    # =========================
+    # -----------------------------------------------------
 
     budget_row = connection.execute(
         """
@@ -670,38 +678,49 @@ def budget_page():
         (selected_month,)
     ).fetchone()
 
-    # =========================
+    # -----------------------------------------------------
     # GET MONTHLY SPENDING
-    # =========================
+    # -----------------------------------------------------
 
     spending_row = connection.execute(
         """
-        SELECT COALESCE(SUM(amount), 0) AS total
+        SELECT
+            COALESCE(
+                SUM(amount),
+                0
+            ) AS total
+
         FROM expenses
-        WHERE strftime('%Y-%m', created_at) = ?
+
+        WHERE strftime(
+            '%Y-%m',
+            created_at
+        ) = ?
         """,
         (selected_month,)
     ).fetchone()
 
-    # =========================
+    # -----------------------------------------------------
     # BUDGET HISTORY
-    # =========================
+    # -----------------------------------------------------
 
     budget_history = connection.execute(
         """
         SELECT
             month,
             amount
+
         FROM budgets
+
         ORDER BY month DESC
         """
     ).fetchall()
 
     connection.close()
 
-    # =========================
+    # -----------------------------------------------------
     # CALCULATE VALUES
-    # =========================
+    # -----------------------------------------------------
 
     budget_amount = (
         float(budget_row["amount"])
@@ -714,26 +733,28 @@ def budget_page():
     )
 
     remaining = (
-        budget_amount - total_spent
+        budget_amount
+        - total_spent
     )
 
-    # =========================
+    # -----------------------------------------------------
     # BUDGET PERCENTAGE
-    # =========================
+    # -----------------------------------------------------
 
     if budget_amount > 0:
 
         budget_used_percentage = (
-            total_spent / budget_amount
+            total_spent
+            / budget_amount
         ) * 100
 
     else:
 
         budget_used_percentage = 0
 
-    # =========================
+    # -----------------------------------------------------
     # STATUS
-    # =========================
+    # -----------------------------------------------------
 
     if budget_amount == 0:
 
@@ -751,9 +772,9 @@ def budget_page():
 
         status = "On Track"
 
-    # =========================
+    # -----------------------------------------------------
     # RENDER PAGE
-    # =========================
+    # -----------------------------------------------------
 
     return render_template(
         "budget.html",
@@ -777,6 +798,10 @@ def budget_page():
     )
 
 
+# =========================================================
+# SET BUDGET
+# =========================================================
+
 @app.route(
     "/budgets",
     methods=["GET", "POST"]
@@ -785,7 +810,9 @@ def set_budget():
 
     if request.method == "GET":
 
-        return redirect("/dashboard")
+        return redirect(
+            "/dashboard"
+        )
 
     data = request.get_json()
 
@@ -872,10 +899,13 @@ def set_budget():
             return {
                 "message":
                     "Budget updated successfully",
+
                 "budget_id":
                     budget_id,
+
                 "month":
                     month,
+
                 "amount":
                     amount
             }, 200
@@ -901,10 +931,13 @@ def set_budget():
         return {
             "message":
                 "Budget set successfully",
+
             "budget_id":
                 budget_id,
+
             "month":
                 month,
+
             "amount":
                 amount
         }, 201
@@ -1042,9 +1075,13 @@ def get_spending_insights():
     results = connection.execute(
         """
         SELECT
+
             category,
+
             COUNT(*) AS expense_count,
+
             SUM(amount) AS total_spending,
+
             AVG(amount) AS average_expense
 
         FROM expenses
@@ -1224,6 +1261,7 @@ def update_expense(expense_id):
     return {
         "message":
             "Expense updated successfully",
+
         "expense_id":
             expense_id
     }
@@ -1274,6 +1312,7 @@ def delete_expense(expense_id):
     return {
         "message":
             "Expense deleted successfully",
+
         "expense_id":
             expense_id
     }
@@ -1386,9 +1425,7 @@ def ask_ai():
         "what if"
     ]
 
-    question_lower = (
-        question.lower()
-    )
+    question_lower = question.lower()
 
     if not any(
         keyword in question_lower
@@ -1397,6 +1434,7 @@ def ask_ai():
 
         return jsonify({
             "success": True,
+
             "answer": (
                 "I can only answer "
                 "questions related to "
@@ -1406,10 +1444,13 @@ def ask_ai():
                 "forecasts, and "
                 "financial patterns."
             ),
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "unsupported"
         })
@@ -1513,7 +1554,6 @@ def ask_ai():
         "all financial details",
         "every other financial detail",
         "everything about my spending"
-
     ]
 
     if any(
@@ -1581,9 +1621,7 @@ def ask_ai():
 
     if intent == "category_monthly":
 
-        categories = (
-            get_category_summary()
-        )
+        categories = get_category_summary()
 
         monthly_data = (
             get_monthly_analytics()
@@ -1615,25 +1653,26 @@ def ask_ai():
                     requested_category.lower()
                 ):
 
-                    matched_category = (
-                        category
-                    )
-
+                    matched_category = category
                     break
 
         if not matched_category:
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "I could not identify "
                     "a valid category and "
                     "month in your question."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "category_monthly"
             })
@@ -1642,27 +1681,27 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "Please specify "
                     "a valid month."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "category_monthly"
             })
 
         for item in monthly_data:
 
-            if (
-                item["month"]
-                == start_month
-            ):
+            if item["month"] == start_month:
 
                 selected_month = item
-
                 break
 
         month_display = (
@@ -1676,31 +1715,34 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "I don't have "
                     "spending data "
                     f"available for "
                     f"{month_display}."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "category_monthly"
             })
 
         category_month = (
             get_category_spending_for_month(
-                matched_category[
-                    "category"
-                ],
+                matched_category["category"],
                 start_month
             )
         )
 
         return jsonify({
             "success": True,
+
             "answer": (
                 f"You spent "
                 f"₹{category_month:,.2f} "
@@ -1708,16 +1750,22 @@ def ask_ai():
                 f"{matched_category['category']} "
                 f"in {month_display}."
             ),
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "category_monthly",
+
             "category":
                 matched_category["category"],
+
             "month":
                 start_month,
+
             "amount":
                 category_month
         })
@@ -1732,16 +1780,20 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "Please specify a month, "
                     "for example: "
                     "'How much did I spend "
                     "in August?'"
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "monthly"
             })
@@ -1755,13 +1807,9 @@ def ask_ai():
 
         for item in monthly_data:
 
-            if (
-                item["month"]
-                == start_month
-            ):
+            if item["month"] == start_month:
 
                 selected_month = item
-
                 break
 
         month_display = (
@@ -1775,16 +1823,20 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "I don't have "
                     "spending data "
                     "available for "
                     f"{month_display}."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "monthly"
             })
@@ -1797,16 +1849,22 @@ def ask_ai():
 
         return jsonify({
             "success": True,
+
             "answer":
                 answer,
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "monthly",
+
             "month":
                 start_month,
+
             "amount":
                 selected_month[
                     "total_spending"
@@ -1854,13 +1912,19 @@ def ask_ai():
 
         return jsonify({
             "success": True,
-            "answer": answer,
+
+            "answer":
+                answer,
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "summary",
+
             "summary":
                 summary
         })
@@ -1871,9 +1935,7 @@ def ask_ai():
 
     if intent == "category_specific":
 
-        categories = (
-            get_category_summary()
-        )
+        categories = get_category_summary()
 
         matched_category = None
 
@@ -1898,27 +1960,29 @@ def ask_ai():
                     requested_category.lower()
                 ):
 
-                    matched_category = (
-                        category
-                    )
-
+                    matched_category = category
                     break
 
             if not matched_category:
 
                 return jsonify({
                     "success": True,
+
                     "answer": (
                         "I could not find "
                         "spending data for "
                         f"{requested_category.title()}."
                     ),
+
                     "model":
                         "backend-calculation",
+
                     "currency":
                         "INR",
+
                     "intent":
                         "category_specific",
+
                     "category":
                         requested_category.title()
                 })
@@ -1927,15 +1991,19 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "I could not identify "
                     "the category you are "
                     "asking about."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "category_specific"
             })
@@ -1949,14 +2017,19 @@ def ask_ai():
 
         return jsonify({
             "success": True,
+
             "answer":
                 answer,
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "category_specific",
+
             "category":
                 matched_category
         })
@@ -1967,27 +2040,27 @@ def ask_ai():
 
     if intent == "category":
 
-        categories = (
-            get_category_summary()
-        )
+        categories = get_category_summary()
 
         if not categories:
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "No category spending "
                     "data is available."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "category"
             })
-
-        question_lower = question.lower()
 
         matched_category = None
 
@@ -2000,7 +2073,6 @@ def ask_ai():
             if category_name in question_lower:
 
                 matched_category = category
-
                 break
 
         if matched_category:
@@ -2014,9 +2086,7 @@ def ask_ai():
 
         else:
 
-            highest_category = (
-                categories[0]
-            )
+            highest_category = categories[0]
 
             answer = (
                 "Your highest spending "
@@ -2029,14 +2099,19 @@ def ask_ai():
 
         return jsonify({
             "success": True,
+
             "answer":
                 answer,
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "category",
+
             "categories":
                 categories
         })
@@ -2047,28 +2122,31 @@ def ask_ai():
 
     if intent == "forecast":
 
-        forecast = (
-            get_forecast()
-        )
+        forecast_data = get_forecast()
 
         answer = (
             "Your predicted spending "
             "for the next month is "
-            f"₹{forecast['predicted_spending']:,.2f}."
+            f"₹{forecast_data['predicted_spending']:,.2f}."
         )
 
         return jsonify({
             "success": True,
+
             "answer":
                 answer,
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "forecast",
+
             "forecast":
-                forecast
+                forecast_data
         })
 
     # =====================================================
@@ -2092,15 +2170,19 @@ def ask_ai():
 
                 return jsonify({
                     "success": True,
+
                     "answer": (
                         "There is not enough "
                         "monthly data to "
                         "compare spending."
                     ),
+
                     "model":
                         "backend-calculation",
+
                     "currency":
                         "INR",
+
                     "intent":
                         "analysis"
                 })
@@ -2127,14 +2209,18 @@ def ask_ai():
 
                 return jsonify({
                     "success": True,
+
                     "answer": (
                         "Please specify two "
                         "months to compare."
                     ),
+
                     "model":
                         "backend-calculation",
+
                     "currency":
                         "INR",
+
                     "intent":
                         "analysis"
                 })
@@ -2265,20 +2351,28 @@ def ask_ai():
 
         return jsonify({
             "success": True,
+
             "answer":
                 answer,
+
             "model":
                 "backend-calculation",
+
             "currency":
                 "INR",
+
             "intent":
                 "analysis",
+
             "start_month":
                 start_month,
+
             "end_month":
                 end_month,
+
             "difference":
                 difference,
+
             "category_differences":
                 category_differences
         })
@@ -2303,16 +2397,20 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "I could not understand "
                     "the what-if scenario. "
                     "Please provide a percentage "
                     "or a saving amount."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "what_if"
             })
@@ -2327,6 +2425,7 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer": (
                     "The percentage "
                     f"{what_if_params['percentage']:g}% "
@@ -2334,10 +2433,13 @@ def ask_ai():
                     "a percentage between "
                     "0% and 100%."
                 ),
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "what_if"
             })
@@ -2366,9 +2468,7 @@ def ask_ai():
             )
         )
 
-        summary = (
-            get_financial_summary()
-        )
+        summary = get_financial_summary()
 
         # -------------------------------------------------
         # UNKNOWN CATEGORY
@@ -2376,9 +2476,7 @@ def ask_ai():
 
         if category:
 
-            categories = (
-                get_category_summary()
-            )
+            categories = get_category_summary()
 
             valid_category = any(
                 item["category"].lower()
@@ -2391,17 +2489,22 @@ def ask_ai():
 
                 return jsonify({
                     "success": True,
+
                     "answer": (
                         "I could not find "
                         "spending data for "
                         f"{category}."
                     ),
+
                     "model":
                         "backend-calculation",
+
                     "currency":
                         "INR",
+
                     "intent":
                         "what_if",
+
                     "category":
                         category
                 })
@@ -2415,9 +2518,7 @@ def ask_ai():
             and category
         ):
 
-            categories = (
-                get_category_summary()
-            )
+            categories = get_category_summary()
 
             matched_category = None
 
@@ -2430,24 +2531,28 @@ def ask_ai():
                 ):
 
                     matched_category = item
-
                     break
 
             if not matched_category:
 
                 return jsonify({
                     "success": True,
+
                     "answer": (
                         "I could not find "
                         "spending data for "
                         f"{category}."
                     ),
+
                     "model":
                         "backend-calculation",
+
                     "currency":
                         "INR",
+
                     "intent":
                         "what_if",
+
                     "category":
                         category
                 })
@@ -2498,28 +2603,37 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer":
                     answer,
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "what_if",
+
                 "category":
                     category,
+
                 "percentage":
                     abs(percentage),
+
                 "savings":
                     round(
                         savings,
                         2
                     ),
+
                 "new_category_spending":
                     round(
                         new_category_spending,
                         2
                     ),
+
                 "new_total_spending":
                     round(
                         new_total_spending,
@@ -2583,21 +2697,28 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer":
                     answer,
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "what_if",
+
                 "percentage":
                     abs(percentage),
+
                 "savings":
                     round(
                         savings,
                         2
                     ),
+
                 "new_spending":
                     round(
                         new_spending,
@@ -2646,26 +2767,34 @@ def ask_ai():
 
                 return jsonify({
                     "success": True,
+
                     "answer":
                         answer,
+
                     "model":
                         "backend-calculation",
+
                     "currency":
                         "INR",
+
                     "intent":
                         "what_if",
+
                     "monthly_saving":
                         round(
                             amount,
                             2
                         ),
+
                     "months":
                         months,
+
                     "total_saving":
                         round(
                             total_saving,
                             2
                         ),
+
                     "new_spending":
                         round(
                             new_spending,
@@ -2692,19 +2821,25 @@ def ask_ai():
 
             return jsonify({
                 "success": True,
+
                 "answer":
                     answer,
+
                 "model":
                     "backend-calculation",
+
                 "currency":
                     "INR",
+
                 "intent":
                     "what_if",
+
                 "saving":
                     round(
                         amount,
                         2
                     ),
+
                 "new_spending":
                     round(
                         new_spending,
@@ -2718,15 +2853,19 @@ def ask_ai():
 
     return jsonify({
         "success": True,
+
         "answer": (
             "I could not determine "
             "the exact financial "
             "information you are asking for."
         ),
+
         "model":
             "backend-calculation",
+
         "currency":
             "INR",
+
         "intent":
             intent
     })
@@ -2945,7 +3084,7 @@ def ai_insights():
         None
     )
 
-    forecast = next(
+    forecast_insight = next(
         (
             insight
             for insight in insights
@@ -2972,23 +3111,30 @@ def ai_insights():
         f"₹{overall_trend['difference']:.2f}. "
         "Your predicted spending "
         "for next month is "
-        f"₹{forecast['predicted_spending']:.2f}."
+        f"₹{forecast_insight['predicted_spending']:.2f}."
     )
 
     return jsonify({
         "success": True,
+
         "answer":
             answer,
+
         "model":
             "backend-calculation",
+
         "currency":
             "INR",
+
         "summary":
             summary,
+
         "insights":
             insights,
+
         "spending_patterns":
             spending_patterns,
+
         "unusual_expenses":
             unusual_expenses
     })
@@ -3032,6 +3178,37 @@ def expenses_page():
 
 
 # =========================================================
+# CATEGORY NORMALIZATION
+# =========================================================
+
+def normalize_category(category):
+
+    if not category:
+        return category
+
+    category_map = {
+        "food": "Food",
+        "shopping": "Shopping",
+        "transport": "Transport",
+        "entertainment": "Entertainment",
+        "utilities": "Utilities",
+        "travel": "Travel",
+        "medical": "Medical",
+        "health": "Health",
+        "education": "Education",
+        "rent": "Rent",
+        "bills": "Bills"
+    }
+
+    category_clean = category.strip()
+
+    return category_map.get(
+        category_clean.lower(),
+        category_clean
+    )
+
+
+# =========================================================
 # ADD EXPENSE FROM FORM
 # =========================================================
 
@@ -3048,27 +3225,6 @@ def add_expense_from_form():
     category = request.form.get(
         "category"
     )
-
-    category_map = {
-        "food": "Food",
-        "shopping": "Shopping",
-        "transport": "Transport",
-        "entertainment": "Entertainment",
-        "utilities": "Utilities",
-        "travel": "Travel",
-        "medical": "Medical",
-        "health": "Health",
-        "education": "Education",
-        "rent": "Rent",
-        "bills": "Bills"
-    }
-
-    if category:
-
-        category = category_map.get(
-            category.strip().lower(),
-            category.strip()
-        )
 
     description = request.form.get(
         "description"
@@ -3112,6 +3268,10 @@ def add_expense_from_form():
             400
         )
 
+    category = normalize_category(
+        category
+    )
+
     connection = (
         get_db_connection()
     )
@@ -3124,7 +3284,7 @@ def add_expense_from_form():
         """,
         (
             amount,
-            category.strip(),
+            category,
             description
         )
     )
@@ -3255,27 +3415,6 @@ def update_expense_from_page(
         "category"
     )
 
-    category_map = {
-        "food": "Food",
-        "shopping": "Shopping",
-        "transport": "Transport",
-        "entertainment": "Entertainment",
-        "utilities": "Utilities",
-        "travel": "Travel",
-        "medical": "Medical",
-        "health": "Health",
-        "education": "Education",
-        "rent": "Rent",
-        "bills": "Bills"
-    }
-
-    if category:
-
-        category = category_map.get(
-            category.strip().lower(),
-            category.strip()
-        )
-
     description = request.form.get(
         "description"
     )
@@ -3318,6 +3457,10 @@ def update_expense_from_page(
             400
         )
 
+    category = normalize_category(
+        category
+    )
+
     connection = (
         get_db_connection()
     )
@@ -3353,7 +3496,7 @@ def update_expense_from_page(
         """,
         (
             amount,
-            category.strip(),
+            category,
             description,
             expense_id
         )
