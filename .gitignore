@@ -16,3 +16,6 @@ mlruns/
 
 # Local SQLite database
 *.db
+
+# Local backup files
+*_backup.py
