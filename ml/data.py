@@ -1,14 +1,25 @@
-import sqlite3
-from pathlib import Path
+import os
 
 import pandas as pd
+import psycopg
+from dotenv import load_dotenv
 
 
-DATABASE = Path(__file__).resolve().parent.parent / "smartspend.db"
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def load_expenses():
-    connection = sqlite3.connect(DATABASE)
+
+    if not DATABASE_URL:
+        raise RuntimeError(
+            "DATABASE_URL is not set in .env"
+        )
+
+    connection = psycopg.connect(
+        DATABASE_URL
+    )
 
     query = """
         SELECT
@@ -21,7 +32,10 @@ def load_expenses():
         ORDER BY created_at ASC
     """
 
-    dataframe = pd.read_sql_query(query, connection)
+    dataframe = pd.read_sql_query(
+        query,
+        connection
+    )
 
     connection.close()
 
