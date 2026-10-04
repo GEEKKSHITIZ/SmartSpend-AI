@@ -189,13 +189,7 @@ def signup():
 
             connection.commit()
 
-            return jsonify({
-                "message":
-                    "Account created successfully",
-
-                "user":
-                    dict(user)
-            }), 201
+            return redirect(url_for("login"))
 
         except Exception:
 
