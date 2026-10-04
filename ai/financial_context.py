@@ -1,162 +1,135 @@
-import sqlite3
 import re
 
-from pathlib import Path
+from app.database import get_db_connection
 
-
-# =========================
-# DATABASE PATH
-# =========================
-
-DATABASE = (
-    Path(__file__).resolve().parent.parent
-    / "smartspend.db"
-)
-
-
-# =========================
-# FINANCIAL SUMMARY
-# =========================
 
 def get_financial_summary():
+    connection = get_db_connection()
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    try:
+        cursor = connection.cursor()
 
-    cursor.execute("""
-        SELECT
-            COALESCE(SUM(amount), 0),
-            COUNT(*),
-            COALESCE(AVG(amount), 0)
-        FROM expenses
-    """)
+        cursor.execute("""
+            SELECT
+                COALESCE(SUM(amount), 0) AS total_spending,
+                COUNT(*) AS expense_count,
+                COALESCE(AVG(amount), 0) AS average_expense
+            FROM expenses
+        """)
 
-    total_spending, expense_count, average_expense = cursor.fetchone()
+        row = cursor.fetchone()
 
-    connection.close()
+        total_spending = row["total_spending"]
+        expense_count = row["expense_count"]
+        average_expense = row["average_expense"]
 
-    return {
-        "total_spending": round(total_spending, 2),
-        "expense_count": expense_count,
-        "average_expense": round(average_expense, 2)
-    }
+        return {
+            "total_spending": round(float(total_spending), 2),
+            "expense_count": expense_count,
+            "average_expense": round(float(average_expense), 2)
+        }
 
+    finally:
+        connection.close()
 
-# =========================
-# CATEGORY SUMMARY
-# =========================
 
 def get_category_summary():
+    connection = get_db_connection()
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    try:
+        cursor = connection.cursor()
 
-    cursor.execute("""
-        SELECT
-            category,
-            SUM(amount) AS total_spending
-        FROM expenses
-        GROUP BY category
-        ORDER BY total_spending DESC
-    """)
+        cursor.execute("""
+            SELECT
+                category,
+                SUM(amount) AS total_spending
+            FROM expenses
+            GROUP BY category
+            ORDER BY total_spending DESC
+        """)
 
-    rows = cursor.fetchall()
+        rows = cursor.fetchall()
 
-    connection.close()
+        return [
+            {
+                "category": row["category"],
+                "total_spending": round(float(row["total_spending"]), 2)
+            }
+            for row in rows
+        ]
 
-    return [
-        {
-            "category": row[0],
-            "total_spending": round(row[1], 2)
-        }
-        for row in rows
-    ]
+    finally:
+        connection.close()
 
-
-# =========================
-# MONTHLY SUMMARY
-# =========================
 
 def get_monthly_summary():
+    connection = get_db_connection()
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    try:
+        cursor = connection.cursor()
 
-    cursor.execute("""
-        SELECT
-            strftime('%Y-%m', created_at) AS month,
-            SUM(amount) AS total_spending
-        FROM expenses
-        GROUP BY month
-        ORDER BY month ASC
-    """)
+        cursor.execute("""
+            SELECT
+                TO_CHAR(created_at, 'YYYY-MM') AS month,
+                SUM(amount) AS total_spending
+            FROM expenses
+            GROUP BY month
+            ORDER BY month ASC
+        """)
 
-    rows = cursor.fetchall()
+        rows = cursor.fetchall()
 
-    connection.close()
+        return [
+            {
+                "month": row["month"],
+                "total_spending": round(float(row["total_spending"]), 2)
+            }
+            for row in rows
+        ]
 
-    return [
-        {
-            "month": row[0],
-            "total_spending": round(row[1], 2)
-        }
-        for row in rows
-    ]
+    finally:
+        connection.close()
 
-
-# =========================
-# SPENDING PATTERNS
-# =========================
 
 def get_spending_patterns():
+    connection = get_db_connection()
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    try:
+        cursor = connection.cursor()
 
-    # =========================
-    # CATEGORY-WISE SPENDING
-    # =========================
+        cursor.execute("""
+            SELECT
+                category,
+                COUNT(*) AS expense_count,
+                SUM(amount) AS total_spending,
+                AVG(amount) AS average_expense
+            FROM expenses
+            GROUP BY category
+            ORDER BY total_spending DESC
+        """)
 
-    cursor.execute("""
-        SELECT
-            category,
-            COUNT(*) AS expense_count,
-            SUM(amount) AS total_spending,
-            AVG(amount) AS average_expense
-        FROM expenses
-        GROUP BY category
-        ORDER BY total_spending DESC
-    """)
+        category_rows = cursor.fetchall()
 
-    category_rows = cursor.fetchall()
+        cursor.execute("""
+            SELECT
+                TO_CHAR(created_at, 'YYYY-MM') AS month,
+                SUM(amount) AS total_spending
+            FROM expenses
+            GROUP BY month
+            ORDER BY month ASC
+        """)
 
-    # =========================
-    # MONTHLY SPENDING
-    # =========================
+        monthly_rows = cursor.fetchall()
 
-    cursor.execute("""
-        SELECT
-            strftime('%Y-%m', created_at) AS month,
-            SUM(amount) AS total_spending
-        FROM expenses
-        GROUP BY month
-        ORDER BY month ASC
-    """)
-
-    monthly_rows = cursor.fetchall()
-
-    connection.close()
+    finally:
+        connection.close()
 
     patterns = []
-
-    # =========================
-    # CATEGORY SPENDING PATTERN
-    # =========================
 
     if category_rows:
 
         total_spending = sum(
-            row[2]
+            float(row["total_spending"])
             for row in category_rows
         )
 
@@ -165,46 +138,38 @@ def get_spending_patterns():
             highest_category = category_rows[0]
 
             highest_percentage = (
-                highest_category[2]
+                float(highest_category["total_spending"])
                 / total_spending
-            ) * 100
+                * 100
+            )
 
             patterns.append({
                 "type": "dominant_category",
-                "category": highest_category[0],
+                "category": highest_category["category"],
                 "amount": round(
-                    highest_category[2],
+                    float(highest_category["total_spending"]),
                     2
                 ),
-                "percentage": round(
-                    highest_percentage,
-                    2
-                )
+                "percentage": round(highest_percentage, 2)
             })
-
-            # =========================
-            # MAJOR CATEGORIES
-            # =========================
 
             major_categories = []
 
             for row in category_rows:
 
                 percentage = (
-                    row[2]
+                    float(row["total_spending"])
                     / total_spending
-                ) * 100
+                    * 100
+                )
 
                 if percentage >= 20:
 
                     major_categories.append({
-                        "category": row[0],
-                        "percentage": round(
-                            percentage,
-                            2
-                        ),
+                        "category": row["category"],
+                        "percentage": round(percentage, 2),
                         "amount": round(
-                            row[2],
+                            float(row["total_spending"]),
                             2
                         )
                     })
@@ -216,38 +181,34 @@ def get_spending_patterns():
                     "categories": major_categories
                 })
 
-    # =========================
-    # MONTHLY SPENDING PATTERN
-    # =========================
-
     if len(monthly_rows) >= 2:
 
         latest_month = monthly_rows[-1]
         previous_month = monthly_rows[-2]
 
-        latest_spending = latest_month[1]
-        previous_spending = previous_month[1]
-
-        difference = (
-            latest_spending
-            - previous_spending
+        latest_spending = float(
+            latest_month["total_spending"]
         )
+
+        previous_spending = float(
+            previous_month["total_spending"]
+        )
+
+        difference = latest_spending - previous_spending
 
         if previous_spending != 0:
 
             percentage_change = (
                 difference
                 / previous_spending
-            ) * 100
+                * 100
+            )
 
             patterns.append({
                 "type": "monthly_change",
-                "previous_month": previous_month[0],
-                "latest_month": latest_month[0],
-                "difference": round(
-                    difference,
-                    2
-                ),
+                "previous_month": previous_month["month"],
+                "latest_month": latest_month["month"],
+                "difference": round(difference, 2),
                 "percentage_change": round(
                     percentage_change,
                     2
@@ -257,41 +218,35 @@ def get_spending_patterns():
     return patterns
 
 
-# =========================
-# UNUSUAL EXPENSE DETECTION
-# =========================
-
 def get_unusual_expenses():
+    connection = get_db_connection()
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    try:
+        cursor = connection.cursor()
 
-    cursor.execute("""
-        SELECT
-            id,
-            amount,
-            category,
-            description,
-            created_at
-        FROM expenses
-        ORDER BY amount ASC
-    """)
+        cursor.execute("""
+            SELECT
+                id,
+                amount,
+                category,
+                description,
+                created_at
+            FROM expenses
+            ORDER BY amount ASC
+        """)
 
-    rows = cursor.fetchall()
+        rows = cursor.fetchall()
 
-    connection.close()
+    finally:
+        connection.close()
 
     if len(rows) < 4:
         return []
 
     amounts = [
-        row[1]
+        float(row["amount"])
         for row in rows
     ]
-
-    # =========================
-    # IQR OUTLIER DETECTION
-    # =========================
 
     n = len(amounts)
 
@@ -306,14 +261,12 @@ def get_unusual_expenses():
         if upper >= n:
             return amounts[lower]
 
-        fraction = (
-            position
-            - int(position)
-        )
+        fraction = position - int(position)
 
         return (
             amounts[lower]
-            + fraction * (
+            + fraction
+            * (
                 amounts[upper]
                 - amounts[lower]
             )
@@ -330,17 +283,16 @@ def get_unusual_expenses():
 
     for row in rows:
 
-        if row[1] > upper_limit:
+        amount = float(row["amount"])
+
+        if amount > upper_limit:
 
             unusual_expenses.append({
-                "id": row[0],
-                "amount": round(
-                    row[1],
-                    2
-                ),
-                "category": row[2],
-                "description": row[3],
-                "created_at": row[4],
+                "id": row["id"],
+                "amount": round(amount, 2),
+                "category": row["category"],
+                "description": row["description"],
+                "created_at": row["created_at"],
                 "threshold": round(
                     upper_limit,
                     2
@@ -350,12 +302,7 @@ def get_unusual_expenses():
     return unusual_expenses
 
 
-# =========================
-# FORECAST
-# =========================
-
 def get_forecast():
-
     from ml.predict import predict_next_month
 
     prediction = predict_next_month()
@@ -369,31 +316,18 @@ def get_forecast():
     }
 
 
-# =========================
-# FINANCIAL INSIGHTS
-# =========================
-
 def get_financial_insights():
 
     summary = get_financial_summary()
     categories = get_category_summary()
     monthly = get_monthly_summary()
     forecast = get_forecast()
-
     spending_patterns = get_spending_patterns()
     unusual_expenses = get_unusual_expenses()
 
     insights = []
 
-    # =========================
-    # SPENDING PATTERN INSIGHTS
-    # =========================
-
     for pattern in spending_patterns:
-
-        # =========================
-        # DOMINANT CATEGORY
-        # =========================
 
         if pattern["type"] == "dominant_category":
 
@@ -401,14 +335,9 @@ def get_financial_insights():
                 "type": "dominant_category_insight",
                 "message": (
                     f"{pattern['category']} accounts for "
-                    f"{pattern['percentage']}% of your "
-                    "total spending."
+                    f"{pattern['percentage']}% of your total spending."
                 )
             })
-
-        # =========================
-        # MONTHLY CHANGE
-        # =========================
 
         elif pattern["type"] == "monthly_change":
 
@@ -438,10 +367,6 @@ def get_financial_insights():
                     )
                 })
 
-    # =========================
-    # HIGHEST SPENDING CATEGORY
-    # =========================
-
     if categories:
 
         highest_category = categories[0]
@@ -451,10 +376,6 @@ def get_financial_insights():
             "category": highest_category["category"],
             "amount": highest_category["total_spending"]
         })
-
-    # =========================
-    # OVERALL SPENDING TREND
-    # =========================
 
     if len(monthly) >= 2:
 
@@ -474,20 +395,10 @@ def get_financial_insights():
             "difference": difference
         })
 
-    # =========================
-    # FORECAST INSIGHT
-    # =========================
-
     insights.append({
         "type": "forecast",
-        "predicted_spending": forecast[
-            "predicted_spending"
-        ]
+        "predicted_spending": forecast["predicted_spending"]
     })
-
-    # =========================
-    # UNUSUAL EXPENSE INSIGHT
-    # =========================
 
     if unusual_expenses:
 
@@ -495,9 +406,8 @@ def get_financial_insights():
             "type": "unusual_expenses",
             "count": len(unusual_expenses),
             "message": (
-                f"{len(unusual_expenses)} unusual "
-                "expense(s) were detected based on "
-                "your spending pattern."
+                f"{len(unusual_expenses)} unusual expense(s) "
+                f"were detected based on your spending pattern."
             )
         })
 
@@ -507,15 +417,10 @@ def get_financial_insights():
             "type": "unusual_expenses",
             "count": 0,
             "message": (
-                "No unusually high expenses were "
-                "detected based on your current "
-                "spending pattern."
+                "No unusually high expenses were detected "
+                "based on your current spending pattern."
             )
         })
-
-    # =========================
-    # FINAL RESPONSE
-    # =========================
 
     return {
         "summary": summary,
@@ -525,14 +430,7 @@ def get_financial_insights():
     }
 
 
-# =========================
-# MONTH DIFFERENCE
-# =========================
-
-def get_month_difference(
-    start_month,
-    end_month
-):
+def get_month_difference(start_month, end_month):
 
     monthly = get_monthly_summary()
 
@@ -554,10 +452,7 @@ def get_month_difference(
         None
     )
 
-    if (
-        start_spending is None
-        or end_spending is None
-    ):
+    if start_spending is None or end_spending is None:
         return None
 
     return {
@@ -566,119 +461,107 @@ def get_month_difference(
         "start_spending": start_spending,
         "end_spending": end_spending,
         "difference": round(
-            end_spending
-            - start_spending,
+            end_spending - start_spending,
             2
         )
     }
 
 
-# =========================
-# CATEGORY MONTH DIFFERENCE
-# =========================
+def get_category_month_difference(start_month, end_month):
 
-def get_category_month_difference(
-    start_month,
-    end_month
-):
+    connection = get_db_connection()
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    try:
+        cursor = connection.cursor()
 
-    cursor.execute("""
-        SELECT
-            category,
+        cursor.execute("""
+            SELECT
+                category,
 
-            SUM(
-                CASE
-                    WHEN strftime('%Y-%m', created_at) = ?
-                    THEN amount
-                    ELSE 0
-                END
-            ) AS start_spending,
+                SUM(
+                    CASE
+                        WHEN TO_CHAR(created_at, 'YYYY-MM') = %s
+                        THEN amount
+                        ELSE 0
+                    END
+                ) AS start_spending,
 
-            SUM(
-                CASE
-                    WHEN strftime('%Y-%m', created_at) = ?
-                    THEN amount
-                    ELSE 0
-                END
-            ) AS end_spending
+                SUM(
+                    CASE
+                        WHEN TO_CHAR(created_at, 'YYYY-MM') = %s
+                        THEN amount
+                        ELSE 0
+                    END
+                ) AS end_spending
 
-        FROM expenses
+            FROM expenses
 
-        WHERE strftime('%Y-%m', created_at)
-        IN (?, ?)
+            WHERE TO_CHAR(created_at, 'YYYY-MM')
+            IN (%s, %s)
 
-        GROUP BY category
+            GROUP BY category
+            ORDER BY category
+        """, (
+            start_month,
+            end_month,
+            start_month,
+            end_month
+        ))
 
-        ORDER BY category
-    """, (
-        start_month,
-        end_month,
-        start_month,
-        end_month
-    ))
+        rows = cursor.fetchall()
 
-    rows = cursor.fetchall()
-
-    connection.close()
+    finally:
+        connection.close()
 
     return [
         {
-            "category": row[0],
-
+            "category": row["category"],
             "start_spending": round(
-                row[1] or 0,
+                float(row["start_spending"] or 0),
                 2
             ),
-
             "end_spending": round(
-                row[2] or 0,
+                float(row["end_spending"] or 0),
                 2
             ),
-
             "difference": round(
-                (row[2] or 0)
-                - (row[1] or 0),
+                float(row["end_spending"] or 0)
+                - float(row["start_spending"] or 0),
                 2
             )
         }
         for row in rows
     ]
 
-def get_category_spending_for_month(
-    category,
-    month
-):
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+def get_category_spending_for_month(category, month):
 
-    cursor.execute("""
-        SELECT
-            COALESCE(SUM(amount), 0)
-        FROM expenses
-        WHERE category = ?
-        AND strftime('%Y-%m', created_at) = ?
-    """, (
-        category,
-        month
-    ))
+    connection = get_db_connection()
 
-    result = cursor.fetchone()
+    try:
+        cursor = connection.cursor()
 
-    connection.close()
+        cursor.execute("""
+            SELECT
+                COALESCE(SUM(amount), 0) AS spending
+            FROM expenses
+            WHERE LOWER(category) = LOWER(%s)
+            AND TO_CHAR(created_at, 'YYYY-MM') = %s
+        """, (
+            category,
+            month
+        ))
+
+        result = cursor.fetchone()
+
+    finally:
+        connection.close()
 
     return round(
-        result[0] or 0,
+        float(result["spending"] or 0),
         2
     )
 
-
-# =========================
-# BUILD FINANCIAL CONTEXT
-# =========================
 
 def build_financial_context(
     start_month=None,
@@ -688,10 +571,6 @@ def build_financial_context(
     monthly_difference = None
     category_differences = []
 
-    # =========================
-    # MONTH COMPARISON
-    # =========================
-
     if start_month and end_month:
 
         monthly_difference = get_month_difference(
@@ -699,11 +578,9 @@ def build_financial_context(
             end_month
         )
 
-        category_differences = (
-            get_category_month_difference(
-                start_month,
-                end_month
-            )
+        category_differences = get_category_month_difference(
+            start_month,
+            end_month
         )
 
     summary = get_financial_summary()
@@ -713,38 +590,20 @@ def build_financial_context(
 
     insight_data = get_financial_insights()
 
-    spending_patterns = (
-        insight_data["spending_patterns"]
-    )
-
-    unusual_expenses = (
-        insight_data["unusual_expenses"]
-    )
-
-    # =========================
-    # BASE CONTEXT
-    # =========================
+    spending_patterns = insight_data["spending_patterns"]
+    unusual_expenses = insight_data["unusual_expenses"]
 
     context = f"""
 FINANCIAL SUMMARY
-
 Total spending across all available months:
-
 ₹{summary['total_spending']}
 
 Number of expenses across all available months:
-
 {summary['expense_count']}
 
 Average expense across all available expenses:
-
 ₹{summary['average_expense']}
-
 """
-
-    # =========================
-    # CATEGORY SPENDING
-    # =========================
 
     context += "\nCATEGORY SPENDING\n"
 
@@ -755,10 +614,6 @@ Average expense across all available expenses:
             f"₹{item['total_spending']}\n"
         )
 
-    # =========================
-    # MONTHLY SPENDING
-    # =========================
-
     context += "\nMONTHLY SPENDING\n"
 
     for item in monthly:
@@ -768,28 +623,17 @@ Average expense across all available expenses:
             f"₹{item['total_spending']}\n"
         )
 
-    # =========================
-    # MONTHLY DIFFERENCE
-    # =========================
-
     if monthly_difference:
 
         context += (
             "\nCALCULATED MONTHLY DIFFERENCE\n"
-
             f"{monthly_difference['start_month']}: "
             f"₹{monthly_difference['start_spending']}\n"
-
             f"{monthly_difference['end_month']}: "
             f"₹{monthly_difference['end_spending']}\n"
-
             f"Difference: "
             f"₹{monthly_difference['difference']}\n"
         )
-
-    # =========================
-    # CATEGORY-WISE DIFFERENCE
-    # =========================
 
     if category_differences:
 
@@ -803,24 +647,14 @@ Average expense across all available expenses:
                 f"{item['category']}: "
                 f"{item['start_spending']} → "
                 f"{item['end_spending']} "
-                f"(Difference: "
-                f"{item['difference']})\n"
+                f"(Difference: {item['difference']})\n"
             )
-
-    # =========================
-    # FORECAST
-    # =========================
 
     context += (
         "\nFORECAST\n"
-
         f"Next month predicted spending: "
         f"₹{forecast['predicted_spending']}\n"
     )
-
-    # =========================
-    # SPENDING PATTERNS
-    # =========================
 
     context += "\nSPENDING PATTERNS\n"
 
@@ -832,7 +666,8 @@ Average expense across all available expenses:
                 f"Dominant category: "
                 f"{pattern['category']} "
                 f"(₹{pattern['amount']}, "
-                f"{pattern['percentage']}% of total spending)\n"
+                f"{pattern['percentage']}% "
+                f"of total spending)\n"
             )
 
         elif pattern["type"] == "major_categories":
@@ -853,15 +688,11 @@ Average expense across all available expenses:
 
             context += (
                 f"Monthly spending change from "
-                f"{pattern['previous_month']} to "
-                f"{pattern['latest_month']}: "
+                f"{pattern['previous_month']} "
+                f"to {pattern['latest_month']}: "
                 f"₹{pattern['difference']} "
                 f"({pattern['percentage_change']}%)\n"
             )
-
-    # =========================
-    # UNUSUAL EXPENSES
-    # =========================
 
     context += "\nUNUSUAL EXPENSES\n"
 
@@ -884,10 +715,6 @@ Average expense across all available expenses:
             "based on the current spending pattern.\n"
         )
 
-    # =========================
-    # FINANCIAL INSIGHTS
-    # =========================
-
     context += "\nFINANCIAL INSIGHTS\n"
 
     for insight in insight_data["insights"]:
@@ -904,8 +731,8 @@ Average expense across all available expenses:
 
             context += (
                 f"Spending change from "
-                f"{insight['start_month']} to "
-                f"{insight['end_month']}: "
+                f"{insight['start_month']} "
+                f"to {insight['end_month']}: "
                 f"₹{insight['difference']}\n"
             )
 
@@ -935,25 +762,12 @@ Average expense across all available expenses:
     return context
 
 
-# =========================
-# BASIC WHAT-IF CALCULATION
-# =========================
+def calculate_what_if(monthly_saving, months):
 
-def calculate_what_if(
-    monthly_saving,
-    months
-):
-
-    monthly_saving = float(
-        monthly_saving
-    )
-
+    monthly_saving = float(monthly_saving)
     months = int(months)
 
-    total_saving = (
-        monthly_saving
-        * months
-    )
+    total_saving = monthly_saving * months
 
     return {
         "monthly_saving": round(
@@ -968,34 +782,32 @@ def calculate_what_if(
     }
 
 
-# =========================
-# CATEGORY SPENDING
-# =========================
-
 def get_category_spending(category):
 
-    connection = sqlite3.connect(DATABASE)
-    cursor = connection.cursor()
+    connection = get_db_connection()
 
-    cursor.execute("""
-        SELECT COALESCE(SUM(amount), 0)
-        FROM expenses
-        WHERE LOWER(category) = LOWER(?)
-    """, (category,))
+    try:
+        cursor = connection.cursor()
 
-    spending = cursor.fetchone()[0]
+        cursor.execute("""
+            SELECT
+                COALESCE(SUM(amount), 0) AS spending
+            FROM expenses
+            WHERE LOWER(category) = LOWER(%s)
+        """, (category,))
 
-    connection.close()
+        row = cursor.fetchone()
+
+        spending = row["spending"]
+
+    finally:
+        connection.close()
 
     return round(
-        spending,
+        float(spending or 0),
         2
     )
 
-
-# =========================
-# CATEGORY WHAT-IF
-# =========================
 
 def calculate_category_what_if(
     category,
@@ -1003,8 +815,8 @@ def calculate_category_what_if(
     months
 ):
 
-    category_spending = (
-        get_category_spending(category)
+    category_spending = get_category_spending(
+        category
     )
 
     monthly_reduction = float(
@@ -1014,8 +826,7 @@ def calculate_category_what_if(
     months = int(months)
 
     total_saving = (
-        monthly_reduction
-        * months
+        monthly_reduction * months
     )
 
     return {
@@ -1032,10 +843,6 @@ def calculate_category_what_if(
         )
     }
 
-
-# =========================
-# DETECT WHAT-IF CATEGORY
-# =========================
 
 def detect_what_if_category(question):
 
@@ -1066,17 +873,9 @@ def detect_what_if_category(question):
     return None
 
 
-# =========================
-# DETECT WHAT-IF PARAMETERS
-# =========================
-
 def detect_what_if_parameters(question):
 
     question_lower = question.lower()
-
-    # =========================
-    # CATEGORY DETECTION
-    # =========================
 
     category_keywords = [
         "food",
@@ -1101,15 +900,8 @@ def detect_what_if_parameters(question):
             question_lower
         ):
 
-            detected_category = (
-                category.title()
-            )
-
+            detected_category = category.title()
             break
-
-    # =========================
-    # PERCENTAGE DETECTION
-    # =========================
 
     percentage_match = re.search(
         r"(-?\d+(?:\.\d+)?)\s*%",
@@ -1122,8 +914,6 @@ def detect_what_if_parameters(question):
             percentage_match.group(1)
         )
 
-        # Invalid percentage
-
         if percentage < 0 or percentage > 100:
 
             return {
@@ -1131,8 +921,6 @@ def detect_what_if_parameters(question):
                 "percentage": percentage,
                 "category": detected_category
             }
-
-        # Reduction phrases
 
         if any(
             phrase in question_lower
@@ -1152,12 +940,9 @@ def detect_what_if_parameters(question):
             "category": detected_category
         }
 
-    # =========================
-    # AMOUNT + MONTHS
-    # =========================
-
     amount_match = re.search(
-        r"(?:₹|rs\.?|inr)?\s*(\d+(?:,\d{3})*(?:\.\d+)?)",
+        r"(?:₹|rs\.?|inr)?\s*"
+        r"(\d+(?:,\d{3})*(?:\.\d+)?)",
         question_lower
     )
 
@@ -1166,18 +951,11 @@ def detect_what_if_parameters(question):
         question_lower
     )
 
-    if (
-        not amount_match
-        or not months_match
-    ):
-
+    if not amount_match or not months_match:
         return None
 
     amount = float(
-        amount_match.group(1).replace(
-            ",",
-            ""
-        )
+        amount_match.group(1).replace(",", "")
     )
 
     months = int(
@@ -1191,18 +969,9 @@ def detect_what_if_parameters(question):
     }
 
 
-# =========================
-# QUESTION INTENT DETECTION
-# =========================
-
-
 def detect_question_intent(question):
 
     question_lower = question.lower()
-
-    # =========================
-    # MONTHS
-    # =========================
 
     months = [
         "january",
@@ -1219,10 +988,6 @@ def detect_question_intent(question):
         "december"
     ]
 
-    # =========================
-    # SPENDING PHRASES
-    # =========================
-
     spending_phrases = [
         "how much",
         "spent",
@@ -1230,10 +995,6 @@ def detect_question_intent(question):
         "expense",
         "expenses"
     ]
-
-    # =========================
-    # WHAT-IF
-    # =========================
 
     what_if_phrases = [
         "what if",
@@ -1250,12 +1011,7 @@ def detect_question_intent(question):
         phrase in question_lower
         for phrase in what_if_phrases
     ):
-
         return "what_if"
-
-    # =========================
-    # FORECAST
-    # =========================
 
     if any(
         phrase in question_lower
@@ -1266,12 +1022,7 @@ def detect_question_intent(question):
             "next month"
         ]
     ):
-
         return "forecast"
-
-    # =========================
-    # SPENDING ANALYSIS
-    # =========================
 
     if any(
         phrase in question_lower
@@ -1283,12 +1034,7 @@ def detect_question_intent(question):
             "decrease"
         ]
     ):
-
         return "analysis"
-
-    # =========================
-    # CATEGORY LIST
-    # =========================
 
     categories = [
         "food",
@@ -1314,10 +1060,6 @@ def detect_question_intent(question):
         for category in categories
     )
 
-    # =========================
-    # CATEGORY + MONTH
-    # =========================
-
     if (
         has_month
         and has_category
@@ -1336,12 +1078,7 @@ def detect_question_intent(question):
             ]
         )
     ):
-
         return "category_monthly"
-
-    # =========================
-    # MONTHLY SPENDING
-    # =========================
 
     if (
         has_month
@@ -1350,12 +1087,7 @@ def detect_question_intent(question):
             for phrase in spending_phrases
         )
     ):
-
         return "monthly"
-
-    # =========================
-    # CATEGORY SPECIFIC
-    # =========================
 
     if any(
         phrase in question_lower
@@ -1367,12 +1099,7 @@ def detect_question_intent(question):
             "expenses on"
         ]
     ):
-
         return "category_specific"
-
-    # =========================
-    # CATEGORY ANALYSIS
-    # =========================
 
     if any(
         phrase in question_lower
@@ -1382,12 +1109,7 @@ def detect_question_intent(question):
             "most spending"
         ]
     ):
-
         return "category"
-
-    # =========================
-    # BROAD FINANCIAL QUESTION
-    # =========================
 
     broad_financial_phrases = [
         "all my categories",
@@ -1402,12 +1124,7 @@ def detect_question_intent(question):
         phrase in question_lower
         for phrase in broad_financial_phrases
     ):
-
         return "summary"
-
-    # =========================
-    # TOTAL SPENDING
-    # =========================
 
     if any(
         phrase in question_lower
@@ -1418,11 +1135,6 @@ def detect_question_intent(question):
             "overall spending"
         ]
     ):
-
         return "summary"
-
-    # =========================
-    # GENERAL
-    # =========================
 
     return "general"
