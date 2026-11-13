@@ -2562,3 +2562,13 @@ body {
     background: #fee2e2;
     color: #b91c1c;
 }
+
+.error-message {
+    color: #b91c1c;
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 14px;
+}

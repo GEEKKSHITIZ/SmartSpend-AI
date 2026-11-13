@@ -16,20 +16,8 @@ sys.path.insert(
 from ml.data import load_expenses
 from ml.features import create_monthly_dataset
 
-from flask import (
-    Flask,
-    jsonify,
-    request,
-    render_template,
-    redirect,
-    session
-)
-
-from werkzeug.security import (
-    generate_password_hash,
-    check_password_hash
-)
-
+from flask import Flask, jsonify, request, render_template, redirect, session, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 from app.database import (
     get_db_connection,
     init_db
@@ -108,47 +96,38 @@ init_db()
 # SIGNUP
 # =========================================================
 
-@app.route(
-    "/signup",
-    methods=["GET", "POST"]
-)
+
+@app.route("/signup", methods=["GET", "POST"])
 def signup():
 
     if request.method == "POST":
 
-        name = request.form.get(
-            "name",
-            ""
-        ).strip()
+        name = request.form.get("name", "").strip()
+        email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
 
-        email = request.form.get(
-            "email",
-            ""
-        ).strip().lower()
-
-        password = request.form.get(
-            "password",
-            ""
-        )
-
+        # Validate required fields
         if not name or not email or not password:
+            return render_template(
+                "signup.html",
+                error="Name, email and password are required",
+                name=name,
+                email=email
+            )
 
-            return jsonify({
-                "error":
-                    "Name, email and password are required"
-            }), 400
-
+        # Validate password length
         if len(password) < 6:
-
-            return jsonify({
-                "error":
-                    "Password must be at least 6 characters"
-            }), 400
+            return render_template(
+                "signup.html",
+                error="Password must be at least 6 characters",
+                name=name,
+                email=email
+            )
 
         connection = get_db_connection()
 
         try:
-
+            # Check whether the email already exists
             existing_user = connection.execute(
                 """
                 SELECT id
@@ -159,20 +138,20 @@ def signup():
             ).fetchone()
 
             if existing_user:
+                return render_template(
+                    "signup.html",
+                    error="This email is already registered. Please log in.",
+                    name=name,
+                    email=email
+                )
 
-                return jsonify({
-                    "error":
-                        "Email already registered"
-                }), 409
+            # Hash the password BEFORE executing the INSERT query
+            password_hash = generate_password_hash(password)
 
-            password_hash = generate_password_hash(
-                password
-            )
-
+            # Insert the new user into the database
             user = connection.execute(
                 """
-                INSERT INTO users
-                (
+                INSERT INTO users (
                     name,
                     email,
                     password_hash
@@ -180,11 +159,7 @@ def signup():
                 VALUES (%s, %s, %s)
                 RETURNING id, name, email
                 """,
-                (
-                    name,
-                    email,
-                    password_hash
-                )
+                (name, email, password_hash)
             ).fetchone()
 
             connection.commit()
@@ -192,17 +167,14 @@ def signup():
             return redirect(url_for("login"))
 
         except Exception:
-
             connection.rollback()
             raise
 
         finally:
-
             connection.close()
 
-    return render_template(
-        "signup.html"
-    )
+    return render_template("signup.html")
+
 
 
 # =========================================================
@@ -228,11 +200,11 @@ def login():
         )
 
         if not email or not password:
-
-            return jsonify({
-                "error":
-                    "Email and password are required"
-            }), 400
+            return render_template(
+                "login.html",
+                error="Please enter both email and password",
+                email=email
+    )
 
         connection = get_db_connection()
 
@@ -256,21 +228,21 @@ def login():
             connection.close()
 
         if not user:
-
-            return jsonify({
-                "error":
-                    "Invalid email or password"
-            }), 401
+            return render_template(
+                "login.html",
+                error="Invalid email or password",
+                email=email
+    )
 
         if not check_password_hash(
-            user["password_hash"],
-            password
-        ):
-
-            return jsonify({
-                "error":
-                    "Invalid email or password"
-            }), 401
+    user["password_hash"],
+    password
+):
+            return render_template(
+                "login.html",
+                error="Invalid email or password",
+                email=email
+    )
 
         session["user_id"] = user["id"]
         session["user_name"] = user["name"]
