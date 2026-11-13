@@ -68,6 +68,15 @@ app = Flask(
 app.secret_key = os.getenv("SECRET_KEY")
 
 
+@app.route("/health", methods=["GET"])
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "SmartSpend AI"
+    }, 200
+
+
+
 # =========================================================
 # LOGIN REQUIRED DECORATOR
 # =========================================================
